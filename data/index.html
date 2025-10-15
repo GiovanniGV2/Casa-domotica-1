@@ -1,70 +1,94 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Panel ESP32</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Casa Domótica - Dashboard</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <header>
-    <h1>Panel de Sensores ESP32</h1>
-  </header>
-
-  <main>
-    <section id="sensores">
-      <div class="sensor">
-        <span>Temperatura:</span>
-        <span id="temp">-- °C</span>
-        <button class="calendar-btn" onclick="mostrarCalendario('temperature')">📅</button>
+  <div class="container">
+    <header class="navbar">
+      <div class="brand">Casa Domótica</div>
+      <div class="nav-right">
+        <input id="apiBaseUrl" type="url" placeholder="http://esp32-sensor.local" style="padding:8px;border-radius:8px;border:1px solid #ddd">
+        <button id="connectBtn" class="navbtn">Conectar</button>
+        <button id="themeBtn" class="theme-toggle">🌙</button>
       </div>
-      <div class="sensor">
-        <span>Humedad:</span>
-        <span id="hum">-- %</span>
-        <button class="calendar-btn" onclick="mostrarCalendario('humidity')">📅</button>
-      </div>
-      <div class="sensor">
-        <span>Gas:</span>
-        <span id="gas">--</span>
-        <button class="calendar-btn" onclick="mostrarGases()">🔍</button>
-        <button class="calendar-btn" onclick="mostrarCalendario('gas')">📅</button>
-      </div>
-      <div class="sensor">
-        <span>Lluvia:</span>
-        <span id="rain">--</span>
-        <button class="calendar-btn" onclick="mostrarCalendario('rain')">📅</button>
-      </div>
-      <div class="sensor">
-        <span>Movimiento:</span>
-        <span id="motion">--</span>
-        <button class="calendar-btn" onclick="mostrarCalendario('motion')">📅</button>
-      </div>
-    </section>
+    </header>
 
-    <section id="grafica" class="hidden">
-      <h2 id="grafica-titulo">Gráfica</h2>
-      <input type="date" id="fecha" onchange="cargarGrafica()">
-      <canvas id="chart"></canvas>
-      <button onclick="cerrarGrafica()">Cerrar</button>
-    </section>
+    <main class="container">
+      <h1>Dashboard</h1>
+      <p class="subtitle">Monitoreo en tiempo real</p>
 
-    <section id="popup-gas" class="hidden popup">
-      <h2>Detalle de gases</h2>
-      <ul>
-        <li>CO (Monóxido de carbono)</li>
-        <li>LPG (Gas licuado de petróleo)</li>
-        <li>Metano</li>
-        <li>Alcohol</li>
-        <li>Humo</li>
-      </ul>
-      <button onclick="cerrarPopupGas()">Cerrar</button>
-    </section>
-  </main>
+      <div class="tiles" id="tiles">
+        <!-- Tiles se actualizan desde JS -->
+        <div class="tile tile--temp">
+          <div class="tile-header"><span class="tile-icon">🌡️</span><span class="tile-title">Temperatura</span></div>
+          <div class="tile-body"><div class="kv"><span>Actual</span><strong id="tile-temp">-- °C</strong></div></div>
+        </div>
 
-  <footer>
-    <p>ESP32 Domótica - 2025</p>
-  </footer>
+        <div class="tile tile--temp">
+          <div class="tile-header"><span class="tile-icon">💧</span><span class="tile-title">Humedad</span></div>
+          <div class="tile-body"><div class="kv"><span>Actual</span><strong id="tile-hum">-- %</strong></div></div>
+        </div>
 
-  <script src="script.js"></script>
+        <div class="tile tile--gas">
+          <div class="tile-header"><span class="tile-icon">🧪</span><span class="tile-title">Gas</span></div>
+          <div class="tile-body"><div class="kv"><span>Actual</span><strong id="tile-gas">-- ppm</strong></div></div>
+        </div>
+
+        <div class="tile tile--water">
+          <div class="tile-header"><span class="tile-icon">🌧️</span><span class="tile-title">Agua</span></div>
+          <div class="tile-body"><div class="kv"><span>Actual</span><strong id="tile-water">-- %</strong></div></div>
+        </div>
+
+        <div class="tile tile--motion">
+          <div class="tile-header"><span class="tile-icon">👤</span><span class="tile-title">Movimiento</span></div>
+          <div class="tile-body"><div class="kv"><span>Estado</span><strong id="tile-motion">--</strong></div></div>
+        </div>
+
+        <div class="tile">
+          <div class="tile-header"><span class="tile-icon">💡</span><span class="tile-title">LED</span></div>
+          <div class="tile-body">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div id="ledIndicator" class="led"></div>
+              <strong id="tile-led">APAGADO</strong>
+            </div>
+            <div class="tile-actions">
+              <button id="toggleLedBtn">Encender</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section style="margin-top:18px">
+        <div style="display:flex;gap:12px;align-items:center">
+          <select id="sensorSelect">
+            <option value="temp">Temperatura</option>
+            <option value="hum">Humedad</option>
+            <option value="gas">Gas</option>
+            <option value="water">Agua</option>
+            <option value="motion">Movimiento</option>
+          </select>
+          <button id="openChartBtn" class="navbtn">Abrir Gráfica</button>
+        </div>
+
+        <div id="chartContainer" style="margin-top:12px;background:white;border-radius:12px;padding:16px;display:none;">
+          <canvas id="sensorChart"></canvas>
+          <div style="margin-top:8px">
+            <button id="downloadChart">Descargar PNG</button>
+            <button id="closeChart">Cerrar</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">Hecho con ❤️</footer>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
